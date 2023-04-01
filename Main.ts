@@ -1,5 +1,3 @@
-import {world} from '@minecraft/server'
+import {Repeater} from './tenon/core/Repeater'
 
-world.events.playerSpawn.subscribe(({player}) => {
-  player.sendMessage('cscs');
-});
+export const repeater = new Repeater();

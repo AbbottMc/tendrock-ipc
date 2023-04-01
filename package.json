@@ -1,13 +1,13 @@
 {
-  "name": "tenon-minecraft",
+  "name": "@tenon-minecraft/server-repeater",
   "version": "0.1.0",
   "description": "A framework based on Minecraft GameTest API",
-  "main": "tenon/Main.ts",
+  "main": "Main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "QianShanyao",
-  "repository": "https://github.com/TenonMinecraft/TenonPack",
+  "repository": "https://github.com/TenonMinecraft/TenonRepeater",
   "license": "MIT",
   "keywords": [
     "tenon",
