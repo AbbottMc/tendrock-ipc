@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "outDir": "./build/",
+    "noImplicitAny": true,
+    "moduleResolution": "Node",
+    "module": "es6",
+    "target": "es6",
+    "lib": [
+      "ES2021"
+    ],
+    "declaration": true,
+    "typeRoots": ["./index.d.ts", "./node_modules/@types"],
+    "allowJs": true,
+    "downlevelIteration": true
+  }
+}
