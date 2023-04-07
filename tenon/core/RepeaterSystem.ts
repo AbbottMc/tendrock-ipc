@@ -1,7 +1,7 @@
 import {Dimension, MinecraftDimensionTypes, system, world} from '@minecraft/server'
 
 export type DataMap = { [key: string]: string | boolean | number | DataMap };
-export type RepeaterMessageReceiveEvent = { identifier: string, value: string | number | boolean | DataMap };
+export type RepeaterMessageReceiveEvent = { identifier: string, value: string | number | boolean | DataMap, senderEnvId: string };
 
 export class RepeaterSystem {
 
@@ -14,30 +14,33 @@ export class RepeaterSystem {
     this.envId = envId;
   }
 
-  private convertDataMessage(dataMessage: string) {
-    return JSON.parse(dataMessage);
+  private convertDataMessage(rawDataMessage: string) {
+    const senderEnvId = rawDataMessage.split(':')[0];
+    const dataMessage = rawDataMessage.substring(senderEnvId.length + 1);
+    const ret = JSON.parse(dataMessage);
+    ret.senderEnvId = senderEnvId;
+    return ret;
   }
 
   monit(listener: (arg: RepeaterMessageReceiveEvent) => void) {
     system.events.scriptEventReceive.subscribe(({sourceBlock, id, sourceType, sourceEntity, message, initiator}) => {
-      let dataMessage: string;
+      if (!id) return;
+      let rawDataMessage: string;
       if (id.startsWith(this.envId + ":")) {
-        dataMessage = message.substring(this.envId.length + 1);
+        rawDataMessage = id.substring(this.envId.length + 1);
       } else if (id.startsWith(this._broadcastId + ':')) {
-        dataMessage = message.substring(this._broadcastId.length + 1);
+        rawDataMessage = id.substring(this._broadcastId.length + 1);
       }
-      if (!dataMessage) {
-        return;
-      }
-      listener(this.convertDataMessage(dataMessage));
+      if (!rawDataMessage) return;
+      listener(this.convertDataMessage(rawDataMessage));
     });
   }
 
   send(envId: string, identifier: string, value: string | number | boolean | DataMap): void {
-    this._overworld.runCommand(`scriptevent ${envId}:${JSON.stringify({identifier, value})}`);
+    this._overworld.runCommand(`scriptevent ${envId}:${this.envId}:${JSON.stringify({identifier, value})}`);
   }
 
   broadcast(identifier: string, value: string | number | boolean | DataMap) {
-    this._overworld.runCommand(`scriptevent ${this._broadcastId}:${JSON.stringify({identifier, value})}`);
+    this._overworld.runCommand(`scriptevent ${this._broadcastId}:${this.envId}:${JSON.stringify({identifier, value})}`);
   }
 }

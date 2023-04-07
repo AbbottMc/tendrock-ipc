@@ -4,6 +4,7 @@ export declare type DataMap = {
 export declare type RepeaterMessageReceiveEvent = {
 	identifier: string;
 	value: string | number | boolean | DataMap;
+	senderEnvId: string;
 };
 export declare class RepeaterSystem {
 	envId: string;
