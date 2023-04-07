@@ -1,12 +1,13 @@
-import {CommandResult, Dimension, MinecraftDimensionTypes, ScriptEventCommandMessageEvent, system, world} from '@minecraft/server'
+import {CommandResult, Dimension, MinecraftDimensionTypes, system, world} from '@minecraft/server'
 
 export type DataMap = { [key: string]: string | boolean | number | DataMap };
 export type RepeaterMessageReceiveEvent = { identifier: string, value: string | number | boolean | DataMap };
 
-export class TenonRepeater {
+export class RepeaterSystem {
 
   envId: string;
   private _overworld: Dimension;
+  private _broadcastId = 'tenon_broadcast';
 
   constructor(envId: string) {
     this._overworld = world.getDimension(MinecraftDimensionTypes.overworld);
@@ -19,15 +20,24 @@ export class TenonRepeater {
 
   monit(listener: (arg: RepeaterMessageReceiveEvent) => void) {
     system.events.scriptEventReceive.subscribe(({sourceBlock, id, sourceType, sourceEntity, message, initiator}) => {
-      if (!id.startsWith(this.envId)) {
+      let dataMessage: string;
+      if (id.startsWith(this.envId + ":")) {
+        dataMessage = message.substring(this.envId.length + 1);
+      } else if (id.startsWith(this._broadcastId + ':')) {
+        dataMessage = message.substring(this._broadcastId.length + 1);
+      }
+      if (!dataMessage) {
         return;
       }
-      const dataMessage = message.substring(this.envId.length + 1);
       listener(this.convertDataMessage(dataMessage));
     });
   }
 
   send(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult> {
     return this._overworld.runCommandAsync(`scriptevent ${envId}:${JSON.stringify({identifier, value})}`);
+  }
+
+  broadcast(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult> {
+    return this._overworld.runCommandAsync(`scriptevent ${this._broadcastId}:${JSON.stringify({identifier, value})}`);
   }
 }

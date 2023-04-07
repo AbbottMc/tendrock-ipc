@@ -1,16 +1,16 @@
-import {TenonRepeater} from './TenonRepeater'
+import {RepeaterSystem} from './RepeaterSystem'
 
 export class Repeater {
-  private _repeaterMap: Map<string, TenonRepeater>;
+  private _repeaterMap: Map<string, RepeaterSystem>;
 
   constructor() {
-    this._repeaterMap = new Map<string, TenonRepeater>();
+    this._repeaterMap = new Map<string, RepeaterSystem>();
   }
 
-  require(scriptEnvId: string) {
+  register(scriptEnvId: string) {
     if (this._repeaterMap.has(scriptEnvId)) {
       return this._repeaterMap.get(scriptEnvId);
     }
-    return new TenonRepeater(scriptEnvId);
+    return new RepeaterSystem(scriptEnvId);
   }
 }
