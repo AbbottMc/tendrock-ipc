@@ -1,9 +1,7 @@
-import { CommandResult } from '@minecraft/server';
-
-export type DataMap = {
+export declare type DataMap = {
 	[key: string]: string | boolean | number | DataMap;
 };
-export type RepeaterMessageReceiveEvent = {
+export declare type RepeaterMessageReceiveEvent = {
 	identifier: string;
 	value: string | number | boolean | DataMap;
 };
@@ -14,8 +12,8 @@ export declare class RepeaterSystem {
 	constructor(envId: string);
 	private convertDataMessage;
 	monit(listener: (arg: RepeaterMessageReceiveEvent) => void): void;
-	send(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult>;
-	broadcast(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult>;
+	send(envId: string, identifier: string, value: string | number | boolean | DataMap): void;
+	broadcast(identifier: string, value: string | number | boolean | DataMap): void;
 }
 declare class Repeater {
 	private _repeaterMap;

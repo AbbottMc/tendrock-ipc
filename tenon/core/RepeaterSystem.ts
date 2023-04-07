@@ -1,4 +1,4 @@
-import {CommandResult, Dimension, MinecraftDimensionTypes, system, world} from '@minecraft/server'
+import {Dimension, MinecraftDimensionTypes, system, world} from '@minecraft/server'
 
 export type DataMap = { [key: string]: string | boolean | number | DataMap };
 export type RepeaterMessageReceiveEvent = { identifier: string, value: string | number | boolean | DataMap };
@@ -33,11 +33,11 @@ export class RepeaterSystem {
     });
   }
 
-  send(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult> {
-    return this._overworld.runCommandAsync(`scriptevent ${envId}:${JSON.stringify({identifier, value})}`);
+  send(envId: string, identifier: string, value: string | number | boolean | DataMap): void {
+    this._overworld.runCommand(`scriptevent ${envId}:${JSON.stringify({identifier, value})}`);
   }
 
-  broadcast(envId: string, identifier: string, value: string | number | boolean | DataMap): Promise<CommandResult> {
-    return this._overworld.runCommandAsync(`scriptevent ${this._broadcastId}:${JSON.stringify({identifier, value})}`);
+  broadcast(identifier: string, value: string | number | boolean | DataMap) {
+    this._overworld.runCommand(`scriptevent ${this._broadcastId}:${JSON.stringify({identifier, value})}`);
   }
 }
