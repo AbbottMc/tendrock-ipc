@@ -14,3 +14,4 @@ export class Repeater {
     return new RepeaterSystem(scriptEnvId);
   }
 }
+export const repeater = new Repeater();

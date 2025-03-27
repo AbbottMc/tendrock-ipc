@@ -14,10 +14,9 @@ export class RepeaterSystem {
     this.envId = envId;
   }
 
-  private convertDataMessage(rawDataMessage: string) {
-    const senderEnvId = rawDataMessage.split(':')[0];
+  private convertDataMessage(rawDataMessage: string, senderEnvId: string) {
     const dataMessage = rawDataMessage.substring(senderEnvId.length + 1);
-    const ret = JSON.parse(dataMessage);
+    const ret = JSON.parse(dataMessage.replaceAll('$[tc]', ':'));
     ret.senderEnvId = senderEnvId;
     return ret;
   }
@@ -25,22 +24,29 @@ export class RepeaterSystem {
   monit(listener: (arg: RepeaterMessageReceiveEvent) => void) {
     system.events.scriptEventReceive.subscribe(({sourceBlock, id, sourceType, sourceEntity, message, initiator}) => {
       if (!id) return;
-      let rawDataMessage: string;
+      let rawDataMessage: string, senderEnvId: string;
       if (id.startsWith(this.envId + ":")) {
         rawDataMessage = id.substring(this.envId.length + 1);
       } else if (id.startsWith(this._broadcastId + ':')) {
         rawDataMessage = id.substring(this._broadcastId.length + 1);
+        senderEnvId = rawDataMessage.split('-')[0];
+        if (senderEnvId !== this.envId) return;
       }
-      if (!rawDataMessage) return;
-      listener(this.convertDataMessage(rawDataMessage));
+      if (!rawDataMessage || !senderEnvId) return;
+      listener(this.convertDataMessage(rawDataMessage, senderEnvId));
     });
   }
 
+  private processDataStr(identifier: string, value: string | number | boolean | DataMap) {
+    const rawDataStr = JSON.stringify(JSON.stringify({identifier, value}).replaceAll(':', '$[tc]'));
+    return rawDataStr.substring(1, rawDataStr.length - 1);
+  }
+
   send(envId: string, identifier: string, value: string | number | boolean | DataMap): void {
-    this._overworld.runCommand(`scriptevent ${envId}:${this.envId}:${JSON.stringify({identifier, value})}`);
+    this._overworld.runCommand(`scriptevent "${envId}:${this.envId}-${this.processDataStr(identifier, value)}"`);
   }
 
   broadcast(identifier: string, value: string | number | boolean | DataMap) {
-    this._overworld.runCommand(`scriptevent ${this._broadcastId}:${this.envId}:${JSON.stringify({identifier, value})}`);
+    this._overworld.runCommand(`scriptevent "${this._broadcastId}:${this.envId}-${this.processDataStr(identifier, value)}"`);
   }
 }
