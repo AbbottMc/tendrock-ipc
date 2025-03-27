@@ -1,12 +1,19 @@
 const path = require('path');
-const BundleDeclarationsWebpackPlugin = require('bundle-declarations-webpack-plugin').default;
+const TerserPlugin = require("terser-webpack-plugin");
+const envHelpers = require('./environment-helpers');
+const scriptOutputFolderName = envHelpers.getScriptOutputFolderName();
+const scriptEntry = envHelpers.getScriptEntry();
+const projectName = envHelpers.getProjectName();
 
 module.exports = {
   mode: "none",
-  entry: './Main.ts',
+  entry: {
+    Main: `./${scriptEntry}`,
+    child: `./test/child/index.ts`,
+  },
   output: {
-    filename: 'main.js',
-    path: path.resolve(__dirname, 'build')
+    filename: '[name].js',
+    path: path.resolve(__dirname, scriptOutputFolderName)
   },
   experiments: {
     outputModule: true
@@ -16,6 +23,26 @@ module.exports = {
     "@minecraft/server": "@minecraft/server",
     "@minecraft/server-ui": "@minecraft/server-ui"
   },
+  optimization: {
+    minimize: false,
+    minimizer: [
+      new TerserPlugin({
+        test: /\.js(\?.*)?$/i,
+        terserOptions: {
+          ecma: 6,
+          parse: {},
+          compress: {},
+          mangle: true,
+          module: true,
+          toplevel: true,
+          format: {
+            comments: false
+          }
+        },
+      }),
+    ],
+    usedExports: true, // 表示输出结果中只导出那些在外部使用了的成员
+  },
   module: {
     rules: [
       {
@@ -24,7 +51,7 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env'],
+            presets: ['@babel/preset-env', {modules: false}],
             plugins: ["@babel/plugin-transform-runtime"],
             cacheDirectory: true
           }
@@ -37,27 +64,10 @@ module.exports = {
       }
     ]
   },
-  plugins: [
-    //event010 declarationBundlerWebpackPlugin({removeComments: false, removeMergedDeclarations: true})
-    //event010 declarationBundlerWebpackPlugin({name:'@tenon-minecraft/server', removeSource: false})
-    new BundleDeclarationsWebpackPlugin({
-      entry: [
-        {
-          filePath: "./Main.ts",
-          output: {
-            sortNodes: false,
-            noBanner: true,
-            exportReferencedTypes: true
-          }
-        }],
-      outFile: "../index.d.ts",
-      // setting these will mean no post-processing
-      removeEmptyLines: false,
-      removeEmptyExports: false,
-      removeRelativeReExport: true,
-    }),
-  ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js']
+    // alias: {
+    //   '@obsidian/server': 'yalc/@obsidian/server', // 根据你的yalc配置来设置
+    // },
   }
 };

@@ -1,3 +1,9 @@
-/node_modules/
+/.idea/
 /build/
+/.run/
+/yalc.lock
+/scripts/.yalc/
+/.yalc/
+/node_modules/
+/rubbish/
 /.idea/

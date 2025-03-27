@@ -1,16 +1,28 @@
 {
   "compilerOptions": {
-    "outDir": "./build/",
     "noImplicitAny": true,
     "moduleResolution": "Node",
-    "module": "es6",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "module": "esnext",
     "target": "es6",
+    "outDir": "dist",
     "lib": [
-      "ES2021"
+      "ES6",
+      "ES2021",
+      "ES2022"
     ],
-    "declaration": true,
-    "typeRoots": ["./index.d.ts", "./node_modules/@types"],
-    "allowJs": true,
-    "downlevelIteration": true
-  }
+    "paths": {
+      "*": [
+        "./.yalc/*"
+      ]
+    },
+    "allowJs": true
+  },
+  "include": [
+    "./scripts"
+  ],
+  "exclude": [
+    "./rubbish"
+  ]
 }

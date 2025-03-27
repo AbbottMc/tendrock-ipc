@@ -1,4 +1,5 @@
-import {Dimension, MinecraftDimensionTypes, system, world} from '@minecraft/server'
+import {Dimension, system, world} from '@minecraft/server'
+import {MinecraftDimensionTypes} from "@minecraft/vanilla-data";
 
 export type DataMap = { [key: string]: string | boolean | number | DataMap };
 export type RepeaterMessageReceiveEvent = { identifier: string, value: string | number | boolean | DataMap, senderEnvId: string };
@@ -10,7 +11,7 @@ export class RepeaterSystem {
   private _broadcastId = 'tenon_broadcast';
 
   constructor(envId: string) {
-    this._overworld = world.getDimension(MinecraftDimensionTypes.overworld);
+    this._overworld = world.getDimension(MinecraftDimensionTypes.Overworld);
     this.envId = envId;
   }
 
@@ -22,7 +23,7 @@ export class RepeaterSystem {
   }
 
   monit(listener: (arg: RepeaterMessageReceiveEvent) => void) {
-    system.events.scriptEventReceive.subscribe(({sourceBlock, id, sourceType, sourceEntity, message, initiator}) => {
+    system.afterEvents.scriptEventReceive.subscribe(({sourceBlock, id, sourceType, sourceEntity, message, initiator}) => {
       if (!id) return;
       let rawDataMessage: string, senderEnvId: string;
       if (id.startsWith(this.envId + ":")) {
