@@ -9,6 +9,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "declaration": true,
+    "incremental": false,
     "declarationDir": "types/generated",
     "lib": [
       "ES6",

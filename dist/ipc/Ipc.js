@@ -1,23 +1,17 @@
-import { system, world } from "@minecraft/server";
-import { MinecraftDimensionTypes } from "@minecraft/vanilla-data";
-import { IpcMode } from "../lib/IpcMode";
-import { IpcUtils } from "../util/IpcUtils";
-import { SerializerUtils } from "../util/SerializerUtils";
+import { system } from "@minecraft/server";
+import { IpcMode } from "../lib";
+import { SerializerUtils } from "../util";
 import { AsyncUtils } from "../util/AsyncUtils";
 export class Ipc {
     constructor(scriptEnv) {
         this.scriptEnv = scriptEnv;
-        this._overworld = world.getDimension(MinecraftDimensionTypes.Overworld);
     }
     static register(identifier, uuid) {
         return new Ipc({ identifier, uuid });
     }
-    executeCommand(commandStr) {
-        console.log(commandStr);
-        this._overworld.runCommand(commandStr);
-    }
     postByParamOptions(options) {
-        this.executeCommand(SerializerUtils.serialize(options));
+        const { id, message } = SerializerUtils.serialize(options);
+        system.sendScriptEvent(id, message);
     }
     post(mode, identifier, value, targetEnvId) {
         this.postByParamOptions({
@@ -33,7 +27,7 @@ export class Ipc {
             metadata: {
                 mode, identifier
             }
-        }).forEach((commandStr) => this.executeCommand(commandStr));
+        }).forEach(({ id, message }) => system.sendScriptEvent(id, message));
     }
     listenScriptEvent(listener) {
         const thisEnvId = this.scriptEnv.identifier;
@@ -45,12 +39,35 @@ export class Ipc {
             if (!senderEnvId)
                 return;
             listener({ metadataStr, senderEnvId, targetEnvId, message });
-        }, { namespaces: [thisEnvId, IpcUtils.BroadcastEnvId] });
+        }, { namespaces: [thisEnvId, Ipc.BroadcastEnvId] });
         return () => {
             system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
         };
     }
+    assertNotBroadcastEnvId(targetEnvId, errorMessage) {
+        if (!targetEnvId)
+            return;
+        if (targetEnvId === Ipc.BroadcastEnvId) {
+            throw new Error(`${errorMessage}! Env id can not be Broadcast Env Id`);
+        }
+    }
+    assertNotIncludeBroadcastEnvId(targetEnvIds, errorMessage) {
+        if (!targetEnvIds)
+            return;
+        if (targetEnvIds.includes(Ipc.BroadcastEnvId)) {
+            throw new Error(`${errorMessage}! Env id list can not include Broadcast Env Id`);
+        }
+    }
+    assertNotBeOrIncludeBroadcastEnvId(targetEnvIds, errorMessage) {
+        if (typeof targetEnvIds === "string") {
+            this.assertNotBroadcastEnvId(targetEnvIds, errorMessage);
+        }
+        else {
+            this.assertNotIncludeBroadcastEnvId(targetEnvIds, errorMessage);
+        }
+    }
     send(identifier, value, targetEnvIds) {
+        this.assertNotBeOrIncludeBroadcastEnvId(targetEnvIds, "Send message failed");
         if (typeof targetEnvIds === "string") {
             this.post(IpcMode.Message, identifier, value, targetEnvIds);
             return;
@@ -60,12 +77,12 @@ export class Ipc {
         this.postToAll(IpcMode.Message, identifier, value, targetEnvIds);
     }
     broadcast(identifier, value) {
-        this.post(IpcMode.Message, identifier, value, IpcUtils.BroadcastEnvId);
+        this.post(IpcMode.Message, identifier, value, Ipc.BroadcastEnvId);
     }
     on(identifier, listener) {
         return this.listenScriptEvent((event) => {
             const { senderEnvId, metadataStr, message } = event;
-            console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
+            // console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
             const metadata = SerializerUtils.deserializeMetadata(metadataStr);
             if (metadata.mode !== IpcMode.Message)
                 return;
@@ -112,6 +129,7 @@ export class Ipc {
         return this;
     }
     invoke(identifier, value, targetEnvIds) {
+        this.assertNotBeOrIncludeBroadcastEnvId(targetEnvIds, "Invoke method failed");
         const result = new Promise((resolve, reject) => {
             const thisEnvId = this.scriptEnv.identifier;
             let resolveTimes = 0;
@@ -148,7 +166,7 @@ export class Ipc {
                     resolve(invokeResults);
                     system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
                 }
-            }, { namespaces: [thisEnvId, IpcUtils.BroadcastEnvId] });
+            }, { namespaces: [thisEnvId, Ipc.BroadcastEnvId] });
         });
         if (typeof targetEnvIds === "string") {
             this.post(IpcMode.Invoke, identifier, value, targetEnvIds);
@@ -159,6 +177,7 @@ export class Ipc {
         return result;
     }
     handle(identifier, listener, senderEnvFilter) {
+        this.assertNotBeOrIncludeBroadcastEnvId(senderEnvFilter, "Handle method invoke failed");
         const thisEnvId = this.scriptEnv.identifier;
         return this.listenScriptEvent((event) => {
             const { senderEnvId, metadataStr, message } = event;
@@ -182,4 +201,5 @@ export class Ipc {
     }
     ;
 }
+Ipc.BroadcastEnvId = 'ipc_broadcast';
 //# sourceMappingURL=Ipc.js.map

@@ -10,8 +10,7 @@ export class SerializerUtils {
      * @param metadata
      */
     static serializeMetadata(metadata) {
-        const escapedStr = JSON.stringify(metadata).replaceAll(':', '$[tc]');
-        return JSON.stringify(escapedStr).slice(1, -1);
+        return JSON.stringify(metadata).replaceAll(':', '$[tc]');
     }
     /**
      * Deserialize metadata from string
@@ -22,19 +21,19 @@ export class SerializerUtils {
     }
     static serialize(options) {
         const { senderEnvId, targetEnvId, metadata, value } = options;
-        const commandId = `${targetEnvId}:${senderEnvId}-${this.serializeMetadata(metadata)}`;
-        const commandMessage = value ? JSON.stringify(value) : '';
+        const id = `${targetEnvId}:${senderEnvId}-${this.serializeMetadata(metadata)}`;
+        const message = value ? this.serializeData(value) : '';
         // scriptevent <targetEnvId>:<senderEnvId>-<metadata> <dataMessage>
         // scriptevent "ic2:ntrs-{\"mode\"$[tc]\"<IpcMode>\",\"identifier\"$[tc]\"<NamespacedIdentifier>\"}" "Hello Tendrock!"
-        return `scriptevent "${commandId}" ${commandMessage}`;
+        return { id, message };
     }
     static serializeAll(targetEnvIdList, options) {
         const { senderEnvId, metadata, value } = options;
         const metadataStr = this.serializeMetadata(metadata);
-        const commandMessage = value ? JSON.stringify(value) : '';
+        const message = value ? this.serializeData(value) : '';
         return targetEnvIdList.map(targetEnvId => {
-            const commandId = `${targetEnvId}:${senderEnvId}-${metadataStr}`;
-            return `scriptevent "${commandId}" ${commandMessage}`;
+            const id = `${targetEnvId}:${senderEnvId}-${metadataStr}`;
+            return { id, message };
         });
     }
     static deserializeScriptEventId(scriptEventId) {
