@@ -9,7 +9,7 @@ module.exports = {
   mode: "none",
   entry: {
     Main: `./${scriptEntry}`,
-    child: `./test/child/index.ts`,
+    child: `./scripts/test/child/index.ts`,
   },
   output: {
     filename: '[name].js',
