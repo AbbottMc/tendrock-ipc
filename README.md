@@ -1,5 +1,8 @@
-### 榫-中继器
+### Tendrock-IPC
 
-榫-中继器是榫框架中的一个子包，它提供了基本的脚本环境间通信功能，能允许您在不同的脚本环境间进行通信。
+[ ✅ English  | [📃简体中文](./README_CN.md) ]
 
-该包主要作为榫框架前置附加包的脚本部分工具库使用，当然您也可以使用这个库进行不同包间的通信，但如果您想要对不同附加包进行管理与依赖，请使用[榫-脚本环境]()库进行管理。
+Tendrock-IPC is a utility library within the Tendrock framework, serving as the IPC (Inter-Process Communication) implementation for the communication protocol section of the Minecraft Community Script Protocol. 
+
+Tendrock-IPC provides fundamental communication capabilities between scripting environments, enabling you to communicate across different script contexts and achieve functionalities such as message sending, broadcasting, invocation, and event handling.
+
