@@ -7,6 +7,9 @@
     "module": "esnext",
     "target": "es6",
     "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "types/generated",
     "lib": [
       "ES6",
       "ES2021",
