@@ -10,7 +10,8 @@
     "clean": "just-scripts clean",
     "dev": "just-scripts dev",
     "dev-no-scripts": "just-scripts dev-no-scripts",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "publish-alpha": "npm publish --access public --tag alpha"
   },
   "files": [
     "dist",
