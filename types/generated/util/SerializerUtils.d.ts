@@ -28,7 +28,13 @@ export declare class SerializerUtils {
      * @param metadataStr
      */
     static deserializeMetadata(metadataStr: string): IMetadata;
-    static serialize(options: SerializeCommandParamOptions): string;
-    static serializeAll(targetEnvIdList: string[], options: Omit<SerializeCommandParamOptions, 'targetEnvId'>): string[];
+    static serialize(options: SerializeCommandParamOptions): {
+        id: string;
+        message: string;
+    };
+    static serializeAll(targetEnvIdList: string[], options: Omit<SerializeCommandParamOptions, 'targetEnvId'>): {
+        id: string;
+        message: string;
+    }[];
     static deserializeScriptEventId(scriptEventId: string): DeserializeScriptEventIdResult;
 }

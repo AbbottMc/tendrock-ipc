@@ -1,5 +1,4 @@
-import { IEnvironment } from "./api/IEnvironment";
-import { HandleListenerResult, IIpc, IpcMessageReceiveEvent, IpcMessageType } from "./api/IIpc";
+import { HandleListenerResult, IEnvironment, IIpc, IpcMessageReceiveEvent, IpcMessageType } from "./api";
 export interface DebounceEventOptions {
     merge: (event: IpcMessageReceiveEvent, last?: IpcMessageReceiveEvent) => any;
     delayTicks: number;
@@ -17,14 +16,15 @@ export interface IpcInvokeResult {
 }
 export declare class Ipc implements IIpc {
     readonly scriptEnv: IEnvironment;
-    private _overworld;
     constructor(scriptEnv: IEnvironment);
     static register(identifier: string, uuid: string): Ipc;
-    private executeCommand;
     private postByParamOptions;
     private post;
     private postToAll;
     private listenScriptEvent;
+    private assertNotBroadcastEnvId;
+    private assertNotIncludeBroadcastEnvId;
+    private assertNotBeOrIncludeBroadcastEnvId;
     send(identifier: string, value: IpcMessageType, targetEnvId: string): void;
     send(identifier: string, value: IpcMessageType, targetEnvIdList: string[]): void;
     broadcast(identifier: string, value: IpcMessageType): void;

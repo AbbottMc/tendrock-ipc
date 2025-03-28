@@ -1,7 +1,7 @@
 import {HandleListenerResult, IEnvironment, IIpc, IpcMessageReceiveEvent, IpcMessageType} from "./api";
 import {system} from "@minecraft/server";
 import {IpcMode} from "../lib";
-import {IpcUtils, SerializeCommandParamOptions, SerializerUtils} from "../util";
+import {SerializeCommandParamOptions, SerializerUtils} from "../util";
 import {AsyncUtils} from "../util/AsyncUtils";
 
 export interface DebounceEventOptions {
@@ -24,6 +24,7 @@ export interface IpcInvokeResult {
 
 
 export class Ipc implements IIpc {
+  private static BroadcastEnvId = 'ipc_broadcast';
   public readonly scriptEnv: IEnvironment;
 
   constructor(scriptEnv: IEnvironment) {
@@ -65,16 +66,39 @@ export class Ipc implements IIpc {
       const {metadataStr, senderEnvId, targetEnvId} = SerializerUtils.deserializeScriptEventId(id);
       if (!senderEnvId) return;
       listener({metadataStr, senderEnvId, targetEnvId, message});
-    }, {namespaces: [thisEnvId, IpcUtils.BroadcastEnvId]});
+    }, {namespaces: [thisEnvId, Ipc.BroadcastEnvId]});
 
     return () => {
       system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
     };
   }
 
+  private assertNotBroadcastEnvId(targetEnvId: string, errorMessage: string) {
+    if (!targetEnvId) return;
+    if (targetEnvId === Ipc.BroadcastEnvId) {
+      throw new Error(`${errorMessage}! Env id can not be Broadcast Env Id`);
+    }
+  }
+
+  private assertNotIncludeBroadcastEnvId(targetEnvIds: string[], errorMessage: string) {
+    if (!targetEnvIds) return;
+    if (targetEnvIds.includes(Ipc.BroadcastEnvId)) {
+      throw new Error(`${errorMessage}! Env id list can not include Broadcast Env Id`);
+    }
+  }
+
+  private assertNotBeOrIncludeBroadcastEnvId(targetEnvIds: string | string[], errorMessage: string) {
+    if (typeof targetEnvIds === "string") {
+      this.assertNotBroadcastEnvId(targetEnvIds, errorMessage);
+    } else {
+      this.assertNotIncludeBroadcastEnvId(targetEnvIds, errorMessage);
+    }
+  }
+
   public send(identifier: string, value: IpcMessageType, targetEnvId: string): void;
   public send(identifier: string, value: IpcMessageType, targetEnvIdList: string[]): void;
   public send(identifier: string, value: IpcMessageType, targetEnvIds: string | string[]): void {
+    this.assertNotBeOrIncludeBroadcastEnvId(targetEnvIds, "Send message failed");
     if (typeof targetEnvIds === "string") {
       this.post(IpcMode.Message, identifier, value, targetEnvIds);
       return;
@@ -84,7 +108,7 @@ export class Ipc implements IIpc {
   }
 
   public broadcast(identifier: string, value: IpcMessageType): void {
-    this.post(IpcMode.Message, identifier, value, IpcUtils.BroadcastEnvId);
+    this.post(IpcMode.Message, identifier, value, Ipc.BroadcastEnvId);
   }
 
   public on(identifier: string, listener: (arg: IpcMessageReceiveEvent) => void): () => void {
@@ -143,6 +167,7 @@ export class Ipc implements IIpc {
   public invoke(identifier: string, value: IpcMessageType, targetEnvId: string): Promise<IpcInvokeResult>;
   public invoke(identifier: string, value: IpcMessageType, targetEnvIdList: string[]): Promise<IpcInvokeResult[]>;
   public invoke(identifier: string, value: IpcMessageType, targetEnvIds: string | string[]): Promise<IpcInvokeResult | IpcInvokeResult[]> {
+    this.assertNotBeOrIncludeBroadcastEnvId(targetEnvIds, "Invoke method failed");
     const result = new Promise<IpcInvokeResult | IpcInvokeResult[]>((resolve, reject) => {
       const thisEnvId = this.scriptEnv.identifier;
       let resolveTimes = 0;
@@ -176,7 +201,7 @@ export class Ipc implements IIpc {
           resolve(invokeResults);
           system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
         }
-      }, {namespaces: [thisEnvId, IpcUtils.BroadcastEnvId]});
+      }, {namespaces: [thisEnvId, Ipc.BroadcastEnvId]});
     });
     if (typeof targetEnvIds === "string") {
       this.post(IpcMode.Invoke, identifier, value, targetEnvIds)
@@ -189,6 +214,7 @@ export class Ipc implements IIpc {
   public handle(identifier: string, listener: (...args: IpcMessageType[]) => HandleListenerResult): void;
   public handle(identifier: string, listener: (...args: IpcMessageType[]) => HandleListenerResult, senderEnvFilter: string[]): void;
   public handle(identifier: string, listener: (arg: IpcMessageType) => HandleListenerResult, senderEnvFilter?: string[]): (() => void) {
+    this.assertNotBeOrIncludeBroadcastEnvId(senderEnvFilter, "Handle method invoke failed");
     const thisEnvId = this.scriptEnv.identifier;
     return this.listenScriptEvent((event) => {
       const {senderEnvId, metadataStr, message} = event;

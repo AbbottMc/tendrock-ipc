@@ -49,7 +49,7 @@ export class SerializerUtils {
   public static serialize(options: SerializeCommandParamOptions) {
     const {senderEnvId, targetEnvId, metadata, value} = options;
     const id = `${targetEnvId}:${senderEnvId}-${this.serializeMetadata(metadata)}`
-    const message = value ? JSON.stringify(value) : '';
+    const message = value ? this.serializeData(value) : '';
 
     // scriptevent <targetEnvId>:<senderEnvId>-<metadata> <dataMessage>
     // scriptevent "ic2:ntrs-{\"mode\"$[tc]\"<IpcMode>\",\"identifier\"$[tc]\"<NamespacedIdentifier>\"}" "Hello Tendrock!"
@@ -59,7 +59,7 @@ export class SerializerUtils {
   public static serializeAll(targetEnvIdList: string[], options: Omit<SerializeCommandParamOptions, 'targetEnvId'>) {
     const {senderEnvId, metadata, value} = options;
     const metadataStr = this.serializeMetadata(metadata);
-    const message = value ? JSON.stringify(value) : '';
+    const message = value ? this.serializeData(value) : '';
     return targetEnvIdList.map(targetEnvId => {
       const id = `${targetEnvId}:${senderEnvId}-${metadataStr}`;
       return {id, message}
