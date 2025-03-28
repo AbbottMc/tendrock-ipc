@@ -34,8 +34,7 @@ export class SerializerUtils {
    * @param metadata
    */
   public static serializeMetadata(metadata: PropertyObject): string {
-    const escapedStr = JSON.stringify(metadata).replaceAll(':', '$[tc]');
-    return JSON.stringify(escapedStr).slice(1, -1);
+    return JSON.stringify(metadata).replaceAll(':', '$[tc]');
   }
 
   /**

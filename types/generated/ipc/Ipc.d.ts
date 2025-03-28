@@ -15,6 +15,7 @@ export interface IpcInvokeResult {
     envId: string;
 }
 export declare class Ipc implements IIpc {
+    private static BroadcastEnvId;
     readonly scriptEnv: IEnvironment;
     constructor(scriptEnv: IEnvironment);
     static register(identifier: string, uuid: string): Ipc;
