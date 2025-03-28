@@ -1,9 +1,7 @@
 {
   "name": "@tendrock/ipc",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.1-alpha",
   "description": "An IPC system implementation of Minecraft Community Script Protocol for Minecraft Bedrock",
-  "homepage": ".",
-  "private": true,
   "scripts": {
     "test": "just-scripts test",
     "build-scripts": "just-scripts build-scripts",
