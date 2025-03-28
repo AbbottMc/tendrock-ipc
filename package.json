@@ -1,6 +1,6 @@
 {
   "name": "@tendrock/ipc",
-  "version": "0.1.0-alpha",
+  "version": "0.1.0-alpha.0",
   "description": "An IPC system implementation of Minecraft Community Script Protocol for Minecraft Bedrock",
   "homepage": ".",
   "private": true,
@@ -14,9 +14,19 @@
     "tsc": "tsc"
   },
   "files": [
-    "dist", "types/generated", "tsconfig.json", "!**/*.test.*", "!**/test/**"
+    "dist",
+    "types/generated",
+    "tsconfig.json",
+    "!**/*.test.*",
+    "!**/test/**"
   ],
-  "keywords": ["Minecraft", "Bedrock", "Script API", "IPC", "Tendrock"],
+  "keywords": [
+    "Minecraft",
+    "Bedrock",
+    "Script API",
+    "IPC",
+    "Tendrock"
+  ],
   "author": "QianShanyao",
   "license": "MIT",
   "devDependencies": {
