@@ -48,22 +48,21 @@ export class SerializerUtils {
 
   public static serialize(options: SerializeCommandParamOptions) {
     const {senderEnvId, targetEnvId, metadata, value} = options;
-    const commandId = `${targetEnvId}:${senderEnvId}-${this.serializeMetadata(metadata)}`
-    const commandMessage = value ? JSON.stringify(value) : '';
+    const id = `${targetEnvId}:${senderEnvId}-${this.serializeMetadata(metadata)}`
+    const message = value ? JSON.stringify(value) : '';
 
     // scriptevent <targetEnvId>:<senderEnvId>-<metadata> <dataMessage>
     // scriptevent "ic2:ntrs-{\"mode\"$[tc]\"<IpcMode>\",\"identifier\"$[tc]\"<NamespacedIdentifier>\"}" "Hello Tendrock!"
-
-    return `scriptevent "${commandId}" ${commandMessage}`;
+    return {id, message}
   }
 
   public static serializeAll(targetEnvIdList: string[], options: Omit<SerializeCommandParamOptions, 'targetEnvId'>) {
     const {senderEnvId, metadata, value} = options;
     const metadataStr = this.serializeMetadata(metadata);
-    const commandMessage = value ? JSON.stringify(value) : '';
+    const message = value ? JSON.stringify(value) : '';
     return targetEnvIdList.map(targetEnvId => {
-      const commandId = `${targetEnvId}:${senderEnvId}-${metadataStr}`;
-      return `scriptevent "${commandId}" ${commandMessage}`;
+      const id = `${targetEnvId}:${senderEnvId}-${metadataStr}`;
+      return {id, message}
     });
   }
 

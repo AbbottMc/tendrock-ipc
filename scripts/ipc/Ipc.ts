@@ -1,10 +1,7 @@
-import {IEnvironment} from "./api/IEnvironment";
-import {HandleListenerResult, IIpc, IpcMessageReceiveEvent, IpcMessageType} from "./api/IIpc";
-import {Dimension, system, world} from "@minecraft/server";
-import {MinecraftDimensionTypes} from "@minecraft/vanilla-data";
-import {IpcMode} from "../lib/IpcMode";
-import {IpcUtils} from "../util/IpcUtils";
-import {SerializeCommandParamOptions, SerializerUtils} from "../util/SerializerUtils";
+import {HandleListenerResult, IEnvironment, IIpc, IpcMessageReceiveEvent, IpcMessageType} from "./api";
+import {system} from "@minecraft/server";
+import {IpcMode} from "../lib";
+import {IpcUtils, SerializeCommandParamOptions, SerializerUtils} from "../util";
 import {AsyncUtils} from "../util/AsyncUtils";
 
 export interface DebounceEventOptions {
@@ -28,24 +25,18 @@ export interface IpcInvokeResult {
 
 export class Ipc implements IIpc {
   public readonly scriptEnv: IEnvironment;
-  private _overworld: Dimension;
 
   constructor(scriptEnv: IEnvironment) {
     this.scriptEnv = scriptEnv;
-    this._overworld = world.getDimension(MinecraftDimensionTypes.Overworld);
   }
 
   public static register(identifier: string, uuid: string) {
     return new Ipc({identifier, uuid});
   }
 
-  private executeCommand(commandStr: string) {
-    console.log(commandStr);
-    this._overworld.runCommand(commandStr);
-  }
-
   private postByParamOptions(options: SerializeCommandParamOptions) {
-    this.executeCommand(SerializerUtils.serialize(options));
+    const {id, message} = SerializerUtils.serialize(options);
+    system.sendScriptEvent(id, message);
   }
 
   private post(mode: IpcMode, identifier: string, value: IpcMessageType, targetEnvId: string) {
@@ -54,7 +45,7 @@ export class Ipc implements IIpc {
       metadata: {
         mode, identifier
       }
-    })
+    });
   }
 
   private postToAll(mode: IpcMode, identifier: string, value: IpcMessageType, targetEnvIdList: string[]) {
@@ -63,7 +54,7 @@ export class Ipc implements IIpc {
       metadata: {
         mode, identifier
       }
-    }).forEach((commandStr) => this.executeCommand(commandStr));
+    }).forEach(({id, message}) => system.sendScriptEvent(id, message));
   }
 
   private listenScriptEvent(listener: (arg: IpcListenScriptEventEvent) => void) {
@@ -99,7 +90,7 @@ export class Ipc implements IIpc {
   public on(identifier: string, listener: (arg: IpcMessageReceiveEvent) => void): () => void {
     return this.listenScriptEvent((event) => {
       const {senderEnvId, metadataStr, message} = event;
-      console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
+      // console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
 
       const metadata = SerializerUtils.deserializeMetadata(metadataStr);
       if (metadata.mode !== IpcMode.Message) return;
