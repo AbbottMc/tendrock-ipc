@@ -27,6 +27,7 @@
     "IPC",
     "Tendrock"
   ],
+  "types": "types/generated",
   "author": "QianShanyao",
   "license": "MIT",
   "repository": "https://github.com/AbbottMc/tendrock-ipc",
