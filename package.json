@@ -1,6 +1,6 @@
 {
   "name": "@tendrock/ipc",
-  "version": "0.2.1-alpha",
+  "version": "0.2.0-alpha.2",
   "main": "dist/index.js",
   "description": "An IPC system implementation of Minecraft Community Script Protocol for Minecraft Bedrock",
   "scripts": {
@@ -29,10 +29,7 @@
   ],
   "author": "QianShanyao",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/AbbottMc/tendrock-ipc"
-  },
+  "repository": "https://github.com/AbbottMc/tendrock-ipc",
   "devDependencies": {
     "@babel/core": "^7.17.10",
     "@babel/plugin-transform-runtime": "^7.17.10",
