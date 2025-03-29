@@ -1,2 +1,1 @@
-export * from './api';
-export * from './Ipc';
+export * from './IpcV1';

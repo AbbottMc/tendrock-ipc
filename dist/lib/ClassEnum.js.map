@@ -1,0 +1,1 @@
+{"version":3,"file":"ClassEnum.js","sourceRoot":"","sources":["../../scripts/lib/ClassEnum.ts"],"names":[],"mappings":"AAAA,MAAM,OAAO,SAAS;IAGV,MAAM,CAAC,QAAQ,CAAsB,IAAY,EAAE,KAAQ;QACnE,IAAI,CAAC,MAAM,CAAC,GAAG,CAAC,IAAI,EAAE,KAAK,CAAC,CAAC;QAC7B,OAAO,KAAK,CAAC;IACf,CAAC;;AALgB,gBAAM,GAA2B,IAAI,GAAG,EAAE,CAAC"}

@@ -1,7 +1,7 @@
-import { Ipc } from "../ipc";
+import { IpcV1 } from "../ipc";
 import { world } from "@minecraft/server";
 import { MinecraftBlockTypes } from "@minecraft/vanilla-data";
-const ipc = Ipc.register('industrialcraft2', '054f9427-466c-4cf2-9887-797b2f7869ec');
+const ipc = IpcV1.register('industrialcraft2', '054f9427-466c-4cf2-9887-797b2f7869ec');
 world.afterEvents.playerPlaceBlock.subscribe(({ block }) => {
     if (block.matches(MinecraftBlockTypes.OakLog)) {
         ipc.send('test:test_message', 'test message!', 'child');

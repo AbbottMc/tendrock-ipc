@@ -1,7 +1,7 @@
-import {Ipc} from "../../ipc/Ipc";
+import {IpcV1} from "../../ipc/IpcV1";
 import {world} from "@minecraft/server";
 
-const ipc = Ipc.register('child', 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
+const ipc = IpcV1.register('child', 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
 
 ipc.on('test:test_message', (event) => {
   world.sendMessage(`Received message: "${event.value}" from "${event.senderEnvId}"`);

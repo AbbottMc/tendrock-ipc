@@ -1,1 +1,2 @@
-export * from './IpcMode';
+export * from './IpcPacketType';
+export * from './IpcVersion';
