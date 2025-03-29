@@ -30,6 +30,7 @@
   "author": "QianShanyao",
   "license": "MIT",
   "repository": {
+    "type": "git",
     "url": "https://github.com/AbbottMc/tendrock-ipc"
   },
   "devDependencies": {
