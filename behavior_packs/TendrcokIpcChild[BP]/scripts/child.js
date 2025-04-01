@@ -1,7 +1,17 @@
 import * as __WEBPACK_EXTERNAL_MODULE__minecraft_server_fb7572af__ from "@minecraft/server";
 /******/ var __webpack_modules__ = ([
 /* 0 */,
-/* 1 */,
+/* 1 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   IpcV1: () => (/* reexport safe */ _IpcV1__WEBPACK_IMPORTED_MODULE_0__.IpcV1)
+/* harmony export */ });
+/* harmony import */ var _IpcV1__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+
+
+
+/***/ }),
 /* 2 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
@@ -24,10 +34,25 @@ class IpcV1 {
     static register(identifier, uuid) {
         return new IpcV1({ identifier, uuid });
     }
-    postByParamOptions(value, options) {
+    postMessage(message, options) {
         const id = this._serializer.serializeToScriptEventId(options);
-        const message = this._serializer.serializeData(value, options.metadata.encoding);
         _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.sendScriptEvent(id, message);
+    }
+    postMessagePieces(messages, options) {
+        messages.forEach((message, index) => {
+            options.metadata.packet_number = messages.length - 1 - index;
+            const id = this._serializer.serializeToScriptEventId(options);
+            _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.sendScriptEvent(id, message);
+        });
+    }
+    postByParamOptions(value, options, messages) {
+        messages !== null && messages !== void 0 ? messages : (messages = this._serializer.serializeData(value, options.metadata.encoding));
+        if (typeof messages === 'string') {
+            this.postMessage(messages, options);
+        }
+        else {
+            this.postMessagePieces(messages, options);
+        }
     }
     post(packetType, identifier, value, targetEnvId) {
         this.postByParamOptions(value, {
@@ -39,14 +64,24 @@ class IpcV1 {
         });
     }
     postToAll(packetType, identifier, value, targetEnvIdList) {
-        const message = this._serializer.serializeData(value, 'json');
-        this._serializer.serializeAllToScriptEventId(targetEnvIdList, {
+        const messages = this._serializer.serializeData(value, 'json');
+        const options = {
             senderEnvId: this.scriptEnv.identifier,
             header: { version: _lib__WEBPACK_IMPORTED_MODULE_1__.IpcVersion.V1 },
             metadata: {
                 packet_type: packetType, packet_id: identifier
-            }
-        }).forEach((id) => _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.sendScriptEvent(id, message));
+            },
+            targetEnvId: undefined
+        };
+        if (typeof messages === 'string') {
+            this._serializer.serializeAllToScriptEventId(targetEnvIdList, options).forEach((id) => _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.sendScriptEvent(id, messages));
+        }
+        else {
+            targetEnvIdList.forEach((targetEnvId) => {
+                options.targetEnvId = targetEnvId;
+                this.postMessagePieces(messages, options);
+            });
+        }
     }
     listenScriptEvent(listener) {
         const thisEnvId = this.scriptEnv.identifier;
@@ -98,7 +133,37 @@ class IpcV1 {
     broadcast(identifier, value) {
         this.post(_lib__WEBPACK_IMPORTED_MODULE_1__.IpcPacketType.Message, identifier, value, IpcV1.BroadcastEnvId);
     }
+    _mergeMessagePackets(messagePackets) {
+        return messagePackets.reduce((acc, cur) => acc + cur);
+    }
+    _getFullMessage(message, metadata, msgPackets) {
+        if (metadata.packet_number === undefined) {
+            return message;
+        }
+        msgPackets.push(message);
+        if (metadata.packet_number === 0) {
+            return this._mergeMessagePackets(msgPackets);
+        }
+        else {
+            return undefined;
+        }
+    }
+    deserializeMetadata(metadataStr, packetType, packetId) {
+        const metadata = this._serializer.deserializeMetadata(metadataStr);
+        if (metadata.packet_type !== packetType)
+            return { metadata, skipByMetadata: true };
+        if (!metadata.packet_id || metadata.packet_id !== packetId)
+            return { metadata, skipByMetadata: true };
+        return { metadata, skipByMetadata: false };
+    }
+    deserializeHeader(headerStr, version) {
+        const header = this._serializer.deserializeHeader(headerStr);
+        if (header.version !== version)
+            return { header, skipByHeader: true };
+        return { header, skipByHeader: false };
+    }
     on(identifier, listener) {
+        const msgPackets = [];
         return this.listenScriptEvent((event) => {
             const { senderEnvId, headerStr, metadataStr, message } = event;
             // console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
@@ -110,11 +175,15 @@ class IpcV1 {
                 return;
             if (!metadata.packet_id || metadata.packet_id !== identifier)
                 return;
+            const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+            if (fullMessage === undefined)
+                return;
             listener({
                 packetId: metadata.packet_id,
-                value: this._serializer.deserializeData(message, metadata.encoding),
+                value: this._serializer.deserializeData(fullMessage, metadata.encoding),
                 senderEnvId
             });
+            msgPackets.length = 0;
         });
     }
     once(identifier, listener) {
@@ -156,6 +225,7 @@ class IpcV1 {
             const thisEnvId = this.scriptEnv.identifier;
             let resolveTimes = 0;
             const invokeResults = [];
+            const msgPackets = [];
             const scriptEvenCallback = _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.afterEvents.scriptEventReceive.subscribe((event) => {
                 const { id, message } = event;
                 if (!id)
@@ -163,33 +233,33 @@ class IpcV1 {
                 const { headerStr, metadataStr, senderEnvId } = this._serializer.deserializeScriptEventId(id);
                 if (!senderEnvId)
                     return;
-                const header = this._serializer.deserializeHeader(headerStr);
-                if (header.version !== _lib__WEBPACK_IMPORTED_MODULE_1__.IpcVersion.V1)
+                const { header, skipByHeader } = this.deserializeHeader(headerStr, _lib__WEBPACK_IMPORTED_MODULE_1__.IpcVersion.V1);
+                if (skipByHeader)
                     return;
-                const metadata = this._serializer.deserializeMetadata(metadataStr);
-                if (metadata.packet_type !== _lib__WEBPACK_IMPORTED_MODULE_1__.IpcPacketType.InvokeResult)
+                const { metadata, skipByMetadata } = this.deserializeMetadata(metadataStr, _lib__WEBPACK_IMPORTED_MODULE_1__.IpcPacketType.InvokeResult, identifier);
+                if (skipByMetadata)
                     return;
-                if (!metadata.packet_id || metadata.packet_id !== identifier)
+                const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+                if (fullMessage === undefined)
                     return;
-                // if (senderEnvId === thisEnvId) {
-                //   reject();
-                //   return;
-                // }
+                const resolvePromise = (results) => {
+                    resolve(results);
+                    msgPackets.length = 0;
+                    _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                };
                 const result = {
-                    value: this._serializer.deserializeData(message, metadata.encoding),
+                    value: this._serializer.deserializeData(fullMessage, metadata.encoding),
                     envId: senderEnvId
                 };
                 if (typeof targetEnvIds === 'string') {
-                    resolve(result);
-                    _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                    resolvePromise(result);
                 }
                 else {
                     invokeResults.push(result);
                 }
                 resolveTimes++;
                 if (resolveTimes >= targetEnvIds.length) {
-                    resolve(invokeResults);
-                    _minecraft_server__WEBPACK_IMPORTED_MODULE_0__.system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                    resolvePromise(invokeResults);
                 }
             }, { namespaces: [thisEnvId, IpcV1.BroadcastEnvId] });
         });
@@ -204,19 +274,21 @@ class IpcV1 {
     handle(identifier, listener, senderEnvFilter) {
         this.assertNotBeOrIncludeBroadcastEnvId(senderEnvFilter, "Handle method invoke failed");
         const thisEnvId = this.scriptEnv.identifier;
+        const msgPackets = [];
         return this.listenScriptEvent((event) => {
             const { senderEnvId, headerStr, metadataStr, message } = event;
             if (senderEnvFilter && !senderEnvFilter.includes(senderEnvId))
                 return;
-            const header = this._serializer.deserializeHeader(headerStr);
-            if (header.version !== _lib__WEBPACK_IMPORTED_MODULE_1__.IpcVersion.V1)
+            const { header, skipByHeader } = this.deserializeHeader(headerStr, _lib__WEBPACK_IMPORTED_MODULE_1__.IpcVersion.V1);
+            if (skipByHeader)
                 return;
-            const metadata = this._serializer.deserializeMetadata(metadataStr);
-            if (metadata.packet_type !== _lib__WEBPACK_IMPORTED_MODULE_1__.IpcPacketType.Invoke)
+            const { metadata, skipByMetadata } = this.deserializeMetadata(metadataStr, _lib__WEBPACK_IMPORTED_MODULE_1__.IpcPacketType.Invoke, identifier);
+            if (skipByMetadata)
                 return;
-            if (!metadata.packet_id || metadata.packet_id !== identifier)
+            const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+            if (fullMessage === undefined)
                 return;
-            const invokeRetPromise = _util_AsyncUtils__WEBPACK_IMPORTED_MODULE_2__.AsyncUtils.awaitIfAsync(listener(this._serializer.deserializeData(message, metadata.encoding)));
+            const invokeRetPromise = _util_AsyncUtils__WEBPACK_IMPORTED_MODULE_2__.AsyncUtils.awaitIfAsync(listener(this._serializer.deserializeData(fullMessage, metadata.encoding)));
             invokeRetPromise.then((retValue) => {
                 this.postByParamOptions(retValue, {
                     senderEnvId: thisEnvId, targetEnvId: senderEnvId,
@@ -226,6 +298,7 @@ class IpcV1 {
                     }
                 });
             });
+            msgPackets.length = 0;
         });
     }
     ;
@@ -347,6 +420,8 @@ Serializers.V1 = new _serializer_SerializerV1__WEBPACK_IMPORTED_MODULE_0__.Seria
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   SerializerV1: () => (/* binding */ SerializerV1)
 /* harmony export */ });
+/* harmony import */ var _util_Utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(11);
+
 class SerializerV1 {
     assertV1Encoding(encoding) {
         if (encoding && encoding !== 'json') {
@@ -355,7 +430,13 @@ class SerializerV1 {
     }
     serializeData(data, encoding) {
         this.assertV1Encoding(encoding);
-        return JSON.stringify(data);
+        const result = JSON.stringify(data);
+        if (result.length > 2047) {
+            return _util_Utils__WEBPACK_IMPORTED_MODULE_0__.Utils.splitString(result, 2047);
+        }
+        else {
+            return result;
+        }
     }
     deserializeData(data, encoding) {
         this.assertV1Encoding(encoding);
@@ -399,6 +480,26 @@ class SerializerV1 {
             headerStr,
             metadataStr
         };
+    }
+}
+
+
+/***/ }),
+/* 11 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Utils: () => (/* binding */ Utils)
+/* harmony export */ });
+class Utils {
+    static splitString(str, maxLength = 2047) {
+        const result = [];
+        let start = 0;
+        while (start < str.length) {
+            result.push(str.slice(start, start + maxLength));
+            start += maxLength;
+        }
+        return result;
     }
 }
 
@@ -450,13 +551,16 @@ class SerializerV1 {
 /******/ 
 /************************************************************************/
 var __webpack_exports__ = {};
-/* harmony import */ var _ipc_IpcV1__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+/* harmony import */ var _ipc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
 /* harmony import */ var _minecraft_server__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
 
 
-const ipc = _ipc_IpcV1__WEBPACK_IMPORTED_MODULE_0__.IpcV1.register('child', 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
+const ipc = _ipc__WEBPACK_IMPORTED_MODULE_0__.IpcV1.register('child', 'f47ac10b-58cc-4372-a567-0e02b2c3d479');
 ipc.on('test:test_message', (event) => {
     _minecraft_server__WEBPACK_IMPORTED_MODULE_1__.world.sendMessage(`Received message: "${event.value}" from "${event.senderEnvId}"`);
+});
+ipc.on('test:test_large_message', (event) => {
+    console.log(`Received large message: "${JSON.stringify(event.value)}" from "${event.senderEnvId}"`);
 });
 ipc.handle('test:test_invoke', (testData) => {
     _minecraft_server__WEBPACK_IMPORTED_MODULE_1__.world.sendMessage(`Invoke function output: "${testData.message}"`);

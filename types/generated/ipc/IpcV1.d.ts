@@ -5,6 +5,8 @@ export declare class IpcV1 implements IIpc {
     private readonly _serializer;
     constructor(scriptEnv: IEnvironment);
     static register(identifier: string, uuid: string): IpcV1;
+    private postMessage;
+    private postMessagePieces;
     private postByParamOptions;
     private post;
     private postToAll;
@@ -15,6 +17,10 @@ export declare class IpcV1 implements IIpc {
     send(identifier: string, value: IpcMessageType, targetEnvId: string): void;
     send(identifier: string, value: IpcMessageType, targetEnvIdList: string[]): void;
     broadcast(identifier: string, value: IpcMessageType): void;
+    private _mergeMessagePackets;
+    private _getFullMessage;
+    private deserializeMetadata;
+    private deserializeHeader;
     on(identifier: string, listener: (arg: IpcMessageReceiveEvent) => void): () => void;
     once(identifier: string, listener: (arg: IpcMessageReceiveEvent) => void): () => void;
     debounce(identifier: string, listener: (arg: IpcMessageReceiveEvent) => void, options: DebounceEventOptions): this;

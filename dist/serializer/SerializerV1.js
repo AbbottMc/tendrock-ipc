@@ -1,3 +1,4 @@
+import { Utils } from "../util/Utils";
 export class SerializerV1 {
     assertV1Encoding(encoding) {
         if (encoding && encoding !== 'json') {
@@ -6,7 +7,13 @@ export class SerializerV1 {
     }
     serializeData(data, encoding) {
         this.assertV1Encoding(encoding);
-        return JSON.stringify(data);
+        const result = JSON.stringify(data);
+        if (result.length > 2047) {
+            return Utils.splitString(result, 2047);
+        }
+        else {
+            return result;
+        }
     }
     deserializeData(data, encoding) {
         this.assertV1Encoding(encoding);

@@ -1,7 +1,7 @@
 import { DeserializeScriptEventIdResult, EncodingType, IHeader, IMetadata, ISerializer, SerializeScriptEventIdOptions } from "../api";
 export declare class SerializerV1 implements ISerializer {
     private assertV1Encoding;
-    serializeData(data: any, encoding: EncodingType): string;
+    serializeData(data: any, encoding: EncodingType): string | string[];
     deserializeData(data: string, encoding: EncodingType): any;
     serializeHeader(header: IHeader): string;
     deserializeHeader(headerStr: string): IHeader;

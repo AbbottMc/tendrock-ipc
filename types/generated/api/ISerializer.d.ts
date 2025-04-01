@@ -4,6 +4,7 @@ export type EncodingType = 'json' | undefined;
 export interface IMetadata extends PropertyObject {
     packet_type: IpcPacketType;
     packet_id: string;
+    packet_number?: number;
     encoding?: EncodingType;
     security?: {
         signature: string;
@@ -30,7 +31,7 @@ export interface ScriptEventParams {
     message: string;
 }
 export interface ISerializer {
-    serializeData(data: any, encoding?: EncodingType): string;
+    serializeData(data: any, encoding?: EncodingType): string | string[];
     deserializeData(data: string, encoding?: EncodingType): any;
     serializeHeader(header: IHeader, encoding?: EncodingType): string;
     deserializeHeader(headerStr: string, encoding?: EncodingType): IHeader;

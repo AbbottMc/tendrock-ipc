@@ -1,6 +1,6 @@
 {
   "name": "@tendrock/ipc",
-  "version": "0.2.0-alpha.3",
+  "version": "0.3.0-alpha.1.21.70-stable.0",
   "main": "dist/index.js",
   "description": "An IPC system implementation of Minecraft Community Script Protocol for Minecraft Bedrock",
   "scripts": {
@@ -11,7 +11,7 @@
     "dev": "just-scripts dev",
     "dev-no-scripts": "just-scripts dev-no-scripts",
     "tsc": "tsc",
-    "publish-alpha": "npm publish --access public --tag alpha"
+    "publish-alpha": "npm publish --access public --tag latest"
   },
   "files": [
     "dist",

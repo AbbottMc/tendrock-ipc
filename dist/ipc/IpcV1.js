@@ -10,10 +10,25 @@ export class IpcV1 {
     static register(identifier, uuid) {
         return new IpcV1({ identifier, uuid });
     }
-    postByParamOptions(value, options) {
+    postMessage(message, options) {
         const id = this._serializer.serializeToScriptEventId(options);
-        const message = this._serializer.serializeData(value, options.metadata.encoding);
         system.sendScriptEvent(id, message);
+    }
+    postMessagePieces(messages, options) {
+        messages.forEach((message, index) => {
+            options.metadata.packet_number = messages.length - 1 - index;
+            const id = this._serializer.serializeToScriptEventId(options);
+            system.sendScriptEvent(id, message);
+        });
+    }
+    postByParamOptions(value, options, messages) {
+        messages !== null && messages !== void 0 ? messages : (messages = this._serializer.serializeData(value, options.metadata.encoding));
+        if (typeof messages === 'string') {
+            this.postMessage(messages, options);
+        }
+        else {
+            this.postMessagePieces(messages, options);
+        }
     }
     post(packetType, identifier, value, targetEnvId) {
         this.postByParamOptions(value, {
@@ -25,14 +40,24 @@ export class IpcV1 {
         });
     }
     postToAll(packetType, identifier, value, targetEnvIdList) {
-        const message = this._serializer.serializeData(value, 'json');
-        this._serializer.serializeAllToScriptEventId(targetEnvIdList, {
+        const messages = this._serializer.serializeData(value, 'json');
+        const options = {
             senderEnvId: this.scriptEnv.identifier,
             header: { version: IpcVersion.V1 },
             metadata: {
                 packet_type: packetType, packet_id: identifier
-            }
-        }).forEach((id) => system.sendScriptEvent(id, message));
+            },
+            targetEnvId: undefined
+        };
+        if (typeof messages === 'string') {
+            this._serializer.serializeAllToScriptEventId(targetEnvIdList, options).forEach((id) => system.sendScriptEvent(id, messages));
+        }
+        else {
+            targetEnvIdList.forEach((targetEnvId) => {
+                options.targetEnvId = targetEnvId;
+                this.postMessagePieces(messages, options);
+            });
+        }
     }
     listenScriptEvent(listener) {
         const thisEnvId = this.scriptEnv.identifier;
@@ -84,7 +109,37 @@ export class IpcV1 {
     broadcast(identifier, value) {
         this.post(IpcPacketType.Message, identifier, value, IpcV1.BroadcastEnvId);
     }
+    _mergeMessagePackets(messagePackets) {
+        return messagePackets.reduce((acc, cur) => acc + cur);
+    }
+    _getFullMessage(message, metadata, msgPackets) {
+        if (metadata.packet_number === undefined) {
+            return message;
+        }
+        msgPackets.push(message);
+        if (metadata.packet_number === 0) {
+            return this._mergeMessagePackets(msgPackets);
+        }
+        else {
+            return undefined;
+        }
+    }
+    deserializeMetadata(metadataStr, packetType, packetId) {
+        const metadata = this._serializer.deserializeMetadata(metadataStr);
+        if (metadata.packet_type !== packetType)
+            return { metadata, skipByMetadata: true };
+        if (!metadata.packet_id || metadata.packet_id !== packetId)
+            return { metadata, skipByMetadata: true };
+        return { metadata, skipByMetadata: false };
+    }
+    deserializeHeader(headerStr, version) {
+        const header = this._serializer.deserializeHeader(headerStr);
+        if (header.version !== version)
+            return { header, skipByHeader: true };
+        return { header, skipByHeader: false };
+    }
     on(identifier, listener) {
+        const msgPackets = [];
         return this.listenScriptEvent((event) => {
             const { senderEnvId, headerStr, metadataStr, message } = event;
             // console.log(`on message: ${senderEnvId} ${metadataStr} ${message}`);
@@ -96,11 +151,15 @@ export class IpcV1 {
                 return;
             if (!metadata.packet_id || metadata.packet_id !== identifier)
                 return;
+            const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+            if (fullMessage === undefined)
+                return;
             listener({
                 packetId: metadata.packet_id,
-                value: this._serializer.deserializeData(message, metadata.encoding),
+                value: this._serializer.deserializeData(fullMessage, metadata.encoding),
                 senderEnvId
             });
+            msgPackets.length = 0;
         });
     }
     once(identifier, listener) {
@@ -142,6 +201,7 @@ export class IpcV1 {
             const thisEnvId = this.scriptEnv.identifier;
             let resolveTimes = 0;
             const invokeResults = [];
+            const msgPackets = [];
             const scriptEvenCallback = system.afterEvents.scriptEventReceive.subscribe((event) => {
                 const { id, message } = event;
                 if (!id)
@@ -149,33 +209,33 @@ export class IpcV1 {
                 const { headerStr, metadataStr, senderEnvId } = this._serializer.deserializeScriptEventId(id);
                 if (!senderEnvId)
                     return;
-                const header = this._serializer.deserializeHeader(headerStr);
-                if (header.version !== IpcVersion.V1)
+                const { header, skipByHeader } = this.deserializeHeader(headerStr, IpcVersion.V1);
+                if (skipByHeader)
                     return;
-                const metadata = this._serializer.deserializeMetadata(metadataStr);
-                if (metadata.packet_type !== IpcPacketType.InvokeResult)
+                const { metadata, skipByMetadata } = this.deserializeMetadata(metadataStr, IpcPacketType.InvokeResult, identifier);
+                if (skipByMetadata)
                     return;
-                if (!metadata.packet_id || metadata.packet_id !== identifier)
+                const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+                if (fullMessage === undefined)
                     return;
-                // if (senderEnvId === thisEnvId) {
-                //   reject();
-                //   return;
-                // }
+                const resolvePromise = (results) => {
+                    resolve(results);
+                    msgPackets.length = 0;
+                    system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                };
                 const result = {
-                    value: this._serializer.deserializeData(message, metadata.encoding),
+                    value: this._serializer.deserializeData(fullMessage, metadata.encoding),
                     envId: senderEnvId
                 };
                 if (typeof targetEnvIds === 'string') {
-                    resolve(result);
-                    system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                    resolvePromise(result);
                 }
                 else {
                     invokeResults.push(result);
                 }
                 resolveTimes++;
                 if (resolveTimes >= targetEnvIds.length) {
-                    resolve(invokeResults);
-                    system.afterEvents.scriptEventReceive.unsubscribe(scriptEvenCallback);
+                    resolvePromise(invokeResults);
                 }
             }, { namespaces: [thisEnvId, IpcV1.BroadcastEnvId] });
         });
@@ -190,19 +250,21 @@ export class IpcV1 {
     handle(identifier, listener, senderEnvFilter) {
         this.assertNotBeOrIncludeBroadcastEnvId(senderEnvFilter, "Handle method invoke failed");
         const thisEnvId = this.scriptEnv.identifier;
+        const msgPackets = [];
         return this.listenScriptEvent((event) => {
             const { senderEnvId, headerStr, metadataStr, message } = event;
             if (senderEnvFilter && !senderEnvFilter.includes(senderEnvId))
                 return;
-            const header = this._serializer.deserializeHeader(headerStr);
-            if (header.version !== IpcVersion.V1)
+            const { header, skipByHeader } = this.deserializeHeader(headerStr, IpcVersion.V1);
+            if (skipByHeader)
                 return;
-            const metadata = this._serializer.deserializeMetadata(metadataStr);
-            if (metadata.packet_type !== IpcPacketType.Invoke)
+            const { metadata, skipByMetadata } = this.deserializeMetadata(metadataStr, IpcPacketType.Invoke, identifier);
+            if (skipByMetadata)
                 return;
-            if (!metadata.packet_id || metadata.packet_id !== identifier)
+            const fullMessage = this._getFullMessage(message, metadata, msgPackets);
+            if (fullMessage === undefined)
                 return;
-            const invokeRetPromise = AsyncUtils.awaitIfAsync(listener(this._serializer.deserializeData(message, metadata.encoding)));
+            const invokeRetPromise = AsyncUtils.awaitIfAsync(listener(this._serializer.deserializeData(fullMessage, metadata.encoding)));
             invokeRetPromise.then((retValue) => {
                 this.postByParamOptions(retValue, {
                     senderEnvId: thisEnvId, targetEnvId: senderEnvId,
@@ -212,6 +274,7 @@ export class IpcV1 {
                     }
                 });
             });
+            msgPackets.length = 0;
         });
     }
     ;

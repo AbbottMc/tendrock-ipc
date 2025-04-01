@@ -1,6 +1,7 @@
 import {
   DeserializeScriptEventIdResult, EncodingType, IHeader, IMetadata, ISerializer, SerializeScriptEventIdOptions
 } from "../api";
+import {Utils} from "../util/Utils";
 
 export class SerializerV1 implements ISerializer {
   private assertV1Encoding(encoding: EncodingType) {
@@ -9,9 +10,14 @@ export class SerializerV1 implements ISerializer {
     }
   }
 
-  serializeData(data: any, encoding: EncodingType): string {
+  serializeData(data: any, encoding: EncodingType): string | string[] {
     this.assertV1Encoding(encoding);
-    return JSON.stringify(data);
+    const result = JSON.stringify(data);
+    if (result.length > 2047) {
+      return Utils.splitString(result, 2047);
+    } else {
+      return result;
+    }
   }
 
   deserializeData(data: string, encoding: EncodingType): any {
