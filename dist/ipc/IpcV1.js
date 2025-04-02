@@ -280,4 +280,3 @@ export class IpcV1 {
     ;
 }
 IpcV1.BroadcastEnvId = 'ipc_broadcast';
-//# sourceMappingURL=IpcV1.js.map

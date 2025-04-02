@@ -7,7 +7,7 @@
     "module": "esnext",
     "target": "es6",
     "outDir": "dist",
-    "sourceMap": true,
+    "sourceMap": false,
     "declaration": true,
     "incremental": false,
     "declarationDir": "types/generated",

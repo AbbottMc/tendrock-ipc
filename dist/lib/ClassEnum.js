@@ -5,4 +5,3 @@ export class ClassEnum {
     }
 }
 ClassEnum.Values = new Map();
-//# sourceMappingURL=ClassEnum.js.map

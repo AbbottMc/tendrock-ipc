@@ -59,4 +59,3 @@ export class SerializerV1 {
         };
     }
 }
-//# sourceMappingURL=SerializerV1.js.map

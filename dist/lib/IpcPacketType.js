@@ -4,4 +4,3 @@ export var IpcPacketType;
     IpcPacketType["Invoke"] = "invoke";
     IpcPacketType["InvokeResult"] = "invoke_result";
 })(IpcPacketType || (IpcPacketType = {}));
-//# sourceMappingURL=IpcPacketType.js.map
