@@ -17,3 +17,9 @@ Tendrock-IPC provides fundamental communication capabilities between scripting e
 
 - ✅ Minecraft Bedrock 1.21.70 Stable
 - ✅ Minecraft Bedrock 1.21.71 Stable
+
+## License
+
+This project is open-sourced with **MIT License**
+
+See [LICENSE.md](./LICENSE.md)

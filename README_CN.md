@@ -79,7 +79,8 @@ ipc2.on('test:test_message', (event) => {
 
 #### handle
 
+## 协议
 
+本项目基于 **MIT 协议**开源
 
-
-
+见：[LICENSE中文](./LICENSE_CN.md)
