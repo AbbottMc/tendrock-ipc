@@ -1,6 +1,6 @@
 {
   "name": "@tendrock/ipc",
-  "version": "0.3.0-alpha.1.21.70-stable.0",
+  "version": "0.3.0-alpha.1.21.70-stable.1",
   "main": "dist/index.js",
   "description": "An IPC system implementation of Minecraft Community Script Protocol for Minecraft Bedrock",
   "scripts": {
