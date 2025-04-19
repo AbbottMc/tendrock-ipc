@@ -11,21 +11,14 @@
     "dev": "just-scripts dev",
     "dev-no-scripts": "just-scripts dev-no-scripts",
     "tsc": "tsc",
-    "publish-alpha": "npm publish --access public --tag latest"
+    "publish-alpha": "npm publish --access public --tag latest",
+    "gen-dependency-licenses": "npx license-checker --relativeLicensePath --json > licenses.json"
   },
   "files": [
-    "dist",
-    "types/generated",
-    "tsconfig.json",
-    "!**/*.test.*",
-    "!**/test/**"
+    "dist", "types/generated", "tsconfig.json", "!**/*.test.*", "!**/test/**"
   ],
   "keywords": [
-    "Minecraft",
-    "Bedrock",
-    "Script API",
-    "IPC",
-    "Tendrock"
+    "Minecraft", "Bedrock", "Script API", "IPC", "Tendrock"
   ],
   "types": "types/generated",
   "author": "QianShanyao",
@@ -50,7 +43,6 @@
     "ts-loader": "^9.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.3",
-    "uglify-js": "^3.15.5",
     "webpack": "5.94.0",
     "webpack-cli": "^4.9.2"
   }
